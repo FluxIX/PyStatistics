@@ -36,8 +36,8 @@ class StatisticsTester( object ):
             print( "{}{}: {}".format( tab_Spacing, message, data ) )
 
     def run_linear_regression_tests( self ):
-        independent_set = StatisticsSet( *self.positive_linear_data[ 0 ], lazy_computation = False )
-        dependent_set = StatisticsSet( *self.positive_linear_data[ 1 ] )
+        independent_set = StatisticsSet( *self.positive_linear_data[ 0 ], lazy_computation = False, is_sample = False )
+        dependent_set = StatisticsSet( *self.positive_linear_data[ 1 ], is_sample = False )
 
         print( "Linear Regression Tests:" )
 
