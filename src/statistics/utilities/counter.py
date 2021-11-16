@@ -1,8 +1,8 @@
 __version__ = r"1.0"
 
 from collections import Counter as SimpleCounter
-from ...utilities.exceptions import NotSupportedException
-from ...utilities.hashing import get_hash
+from .exceptions import NotSupportedException
+from .hashing import get_hash
 
 class Counter( SimpleCounter ):
     """

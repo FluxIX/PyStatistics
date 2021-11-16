@@ -4,7 +4,7 @@ from .utilities.cached_value import CachedValue
 from .utilities.hashing import get_hash
 from .utilities.sorting import sort_values
 from .calculations import mean, mode, moments, quartiles, scores
-from .calculations.frequency.frequency import get_frequency_distribution
+from .calculations.frequency import get_frequency_distribution
 
 class StatisticsSet( object ):
     """

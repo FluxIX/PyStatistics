@@ -1,6 +1,6 @@
 __version__ = r"1.0"
 
-from .counter import Counter
+from ..utilities.counter import Counter
 
 def get_frequency_distribution( *values, **kwargs ):
     """

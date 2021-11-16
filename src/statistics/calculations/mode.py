@@ -1,5 +1,5 @@
-from .frequency.frequency import get_frequency_distribution
-from .frequency.counter import Counter
+from .frequency import get_frequency_distribution
+from ..utilities.counter import Counter
 
 def get_modes( *values ):
     """
