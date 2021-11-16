@@ -30,23 +30,6 @@ def calculate_covariance( *statistics_sets, **kwargs ):
     Adapted from: https://en.wikipedia.org/wiki/Covariance
     """
 
-    # if statistics_set_a.size != statistics_set_b.size:
-    #     raise ValueError( "Data set sizes are not equal." )
-    # else:
-    #     raw_expected_value_a = kwargs.get( "expected_value_a", None )
-    #     if raw_expected_value_a is None:
-    #         expected_value_a = statistics_set_a.arithmetic_mean
-    #     else:
-    #         expected_value_a = float( raw_expected_value_a )
-    #
-    #     raw_expected_value_b = kwargs.get( "expected_value_b", None )
-    #     if raw_expected_value_b is None:
-    #         expected_value_b = statistics_set_b.arithmetic_mean
-    #     else:
-    #         expected_value_b = float( raw_expected_value_b )
-    #
-    #     return ( ( statistics_set_a - expected_value_a ) * ( statistics_set_b - expected_value_b ) ).sum() / statistics_set_a.size
-
     _validate_statistic_sets( *statistics_sets, **kwargs )
 
     data_size = statistics_sets[ 0 ].size
@@ -94,15 +77,10 @@ def calculate_sample_pearson_product_moment_correlation_coefficient( *statistics
     Adapted from: https://en.wikipedia.org/wiki/Pearson_product-moment_correlation_coefficient
     """
 
-    # if statistics_set_a.size != statistics_set_b.size:
-    #     raise ValueError( "Data set sizes are not equal." )
-    # else:
-    #     return ( statistics_set_a.standard_scores * statistics_set_b.standard_scores ).sum() / ( statistics_set_a.size - 1 )
-
     _validate_statistic_sets( *statistics_sets, **kwargs )
 
     data_size = statistics_sets[ 0 ].size
-    return reduce( lambda x, y: x * y, [ stat_set.standard_scores for stat_set in statistics_sets ] ).sum() / ( data_size - 1 )
+    return reduce( lambda x, y: x * y, [ stat_set.standard_scores for stat_set in statistics_sets ] ).sum / ( data_size - 1 )
 
 def calculate_pearson_product_moment_correlation_coefficient( *statistics_sets, **kwargs ):
     """

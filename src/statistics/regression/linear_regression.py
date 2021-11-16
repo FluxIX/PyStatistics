@@ -91,7 +91,7 @@ class LinearRegression( RegressionTechnique ):
         """
 
         if self._correlation_coefficient is None:
-            self._correlation_coefficient = self.slope * self.independent_stat_set.standard_deviation / self.dependent_stat_set.standard_deviation
+            self._correlation_coefficient = regression.calculate_pearson_product_moment_correlation_coefficient( *( self.independent_stat_set, self.dependent_stat_set ) )
 
         return self._correlation_coefficient
 

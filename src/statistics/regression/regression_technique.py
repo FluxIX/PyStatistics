@@ -41,12 +41,4 @@ class RegressionTechnique( object ):
         if stat_set_a.size != stat_set_b.size:
             raise ValueError( "Data set sizes are not equal." )
         else:
-            # result = 0
-            #
-            # processed = 0
-            # while processed < stat_set_a.size:
-            #     result += stat_set_a.data[ processed ] * stat_set_b.data[ processed ]
-            #     processed += 1
-            #
-            # return result
             return ( stat_set_a * stat_set_b ).sum
