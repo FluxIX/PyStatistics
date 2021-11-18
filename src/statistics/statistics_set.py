@@ -11,8 +11,6 @@ class StatisticsSet( object ):
     Represents an immutable data set and computes descriptive statistics on the data set. 
     """
 
-    # TODO: add subset/slice functionality, should return a new StatisticsSet
-
     def __init__( self, *data, **kwargs ):
         """
         Keyword Arguments:
@@ -33,6 +31,8 @@ class StatisticsSet( object ):
         self._label = label
         self._copy_data( data )
         self._is_sample = is_sample
+        # TODO: Instead of copying the kwargs, we really need a frozendict copy of the kwargs.
+        self._creation_kwargs = kwargs.copy()
 
         self._initialize()
         self.clear_results()
@@ -141,7 +141,14 @@ class StatisticsSet( object ):
 
     def _copy_data( self, input_data ):
         self._data = input_data
-        self.__raw_data = input_data
+
+    @property
+    def creation_kwargs( self ):
+        """
+        Gets the keyword arguments used to create the statistics set.
+        """
+
+        return self._creation_kwargs
 
     @property
     def label( self ):
@@ -160,10 +167,6 @@ class StatisticsSet( object ):
         return self.label is not None
 
     @property
-    def _raw_data( self ):
-        return self.__raw_data
-
-    @property
     def data( self ):
         """
         The items of the data set.
@@ -180,7 +183,7 @@ class StatisticsSet( object ):
         """
 
         kwargs = { "sort_cmp": comparator, "sort_reverse": reverse }
-        return sort_values( *self._raw_data, **kwargs )
+        return sort_values( *self.data, **kwargs )
 
     @property
     def size( self ):
@@ -188,7 +191,7 @@ class StatisticsSet( object ):
         Gets the number of items in the data set.
         """
 
-        return len( self._raw_data )
+        return len( self.data )
 
     def __len__( self ):
         """
@@ -310,7 +313,7 @@ class StatisticsSet( object ):
         Gets the quartile information for the data set.
         """
 
-        return quartiles.DataSetQuartileInformation( *self._raw_data, **kwargs )
+        return quartiles.DataSetQuartileInformation( *self.data, **kwargs )
 
     @property
     def quartiles( self ):
@@ -330,7 +333,7 @@ class StatisticsSet( object ):
         """
 
         if not self._frequency_distribution.has_value:
-            self._frequency_distribution.set_value( get_frequency_distribution( *self._raw_data ) )
+            self._frequency_distribution.set_value( get_frequency_distribution( *self.data ) )
 
         return self._frequency_distribution.value
 
@@ -343,7 +346,7 @@ class StatisticsSet( object ):
         `normalize_weights`: True if the weights are to be normalized before the calculation, False otherwise.
         """
 
-        return mean.compute_arithmetic_mean( *self._raw_data, **kwargs )
+        return mean.compute_arithmetic_mean( *self.data, **kwargs )
 
     @property
     def arithmetic_mean( self ):
@@ -365,7 +368,7 @@ class StatisticsSet( object ):
         `normalize_weights`: True if the weights are to be normalized before the calculation, False otherwise.
         """
 
-        return mean.compute_quadratic_mean( *self._raw_data, **kwargs )
+        return mean.compute_quadratic_mean( *self.data, **kwargs )
 
     @property
     def quadratic_mean( self ):
@@ -387,7 +390,7 @@ class StatisticsSet( object ):
         `normalize_weights`: True if the weights are to be normalized before the calculation, False otherwise.
         """
 
-        return mean.compute_cubic_mean( *self._raw_data, **kwargs )
+        return mean.compute_cubic_mean( *self.data, **kwargs )
 
     @property
     def cubic_mean( self ):
@@ -411,7 +414,7 @@ class StatisticsSet( object ):
         Note: the result of the geometric mean is a complex value.
         """
 
-        return mean.compute_geometric_mean( *self._raw_data, **kwargs )
+        return mean.compute_geometric_mean( *self.data, **kwargs )
 
     @property
     def geometric_mean( self ):
@@ -433,7 +436,7 @@ class StatisticsSet( object ):
         `normalize_weights`: True if the weights are to be normalized before the calculation, False otherwise.
         """
 
-        return mean.compute_harmonic_mean( *self._raw_data, **kwargs )
+        return mean.compute_harmonic_mean( *self.data, **kwargs )
 
     @property
     def harmonic_mean( self ):
@@ -457,7 +460,7 @@ class StatisticsSet( object ):
         Note: the result of the geometric mean is a complex value.
         """
 
-        return mean.compute_generalized_mean( power, *self._raw_data, **kwargs )
+        return mean.compute_generalized_mean( power, *self.data, **kwargs )
 
     @property
     def modes( self ):
@@ -596,7 +599,7 @@ class StatisticsSet( object ):
         """
 
         if not self._variance.has_value:
-            self._variance.set_value( moments.compute_variance( self.arithmetic_mean, *self._raw_data ) )
+            self._variance.set_value( moments.compute_variance( self.arithmetic_mean, *self.data ) )
 
         return self._variance.value
 
@@ -607,7 +610,7 @@ class StatisticsSet( object ):
         """
 
         if not self._standard_deviation.has_value:
-            self._standard_deviation.set_value( moments.compute_standard_deviation( self.arithmetic_mean, *self._raw_data ) )
+            self._standard_deviation.set_value( moments.compute_standard_deviation( self.arithmetic_mean, *self.data ) )
 
         return self._standard_deviation.value
 
@@ -618,7 +621,7 @@ class StatisticsSet( object ):
         """
 
         if not self._skew.has_value:
-            self._skew.set_value( moments.compute_skew( self.arithmetic_mean, *self._raw_data ) )
+            self._skew.set_value( moments.compute_skew( self.arithmetic_mean, *self.data ) )
 
         return self._skew.value
 
@@ -629,7 +632,7 @@ class StatisticsSet( object ):
         """
 
         if not self._kurtosis_excess.has_value:
-            self._kurtosis_excess.set_value( moments.compute_kurtosis_excess( self.arithmetic_mean, *self._raw_data ) )
+            self._kurtosis_excess.set_value( moments.compute_kurtosis_excess( self.arithmetic_mean, *self.data ) )
 
         return self._kurtosis_excess.value
 
@@ -662,7 +665,7 @@ class StatisticsSet( object ):
         pass
 
     def __hash__( self ):
-        return get_hash( self.__class__.__name__, *self._raw_data )
+        return get_hash( self.__class__.__name__, *self.data )
 
     def transform( self, transformation, **kwargs ):
         """
@@ -674,7 +677,7 @@ class StatisticsSet( object ):
         if transformation is None:
             raise ValueError( "Transformation cannot be None." )
         else:
-            return self.__class__( *[ transformation( item ) for item in self._raw_data ], **kwargs )
+            return self.__class__( *[ transformation( item ) for item in self.data ], **kwargs )
 
     def _apply_scalar_operation( self, other, operation, label, **kwargs ):
         if operation is None:
@@ -707,7 +710,7 @@ class StatisticsSet( object ):
             raise ValueError( "Invalid type to apply {} operation to statistics set: value must a vector.".format( label ) )
 
         if len( vect ) == self.size:
-            values = [ operation( self._raw_data[ i ], o ) for i, o in enumerate( vect ) ]
+            values = [ operation( self.data[ i ], o ) for i, o in enumerate( vect ) ]
             return self.__class__( *values, **kwargs )
         else:
             raise ValueError( "Input vector of values must be the same length as the data set({}): {}".format( self.size, len( vect ) ) )
@@ -752,3 +755,14 @@ class StatisticsSet( object ):
 
     def __truediv__( self, other ):
         return self._apply_operation( other, lambda a, b: a / b, "true division" )
+
+    def __getitem__( self, location ):
+        if type( location ) == slice:
+            selected_data = self.data[ location ]
+            result = self.__class__( *selected_data, **self.creation_kwargs )
+        elif type( location ) == int:
+            result = self.data[ location ]
+        else:
+            raise ValueError( "Invalid location type." )
+
+        return result
