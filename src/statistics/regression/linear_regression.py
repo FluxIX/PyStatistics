@@ -119,6 +119,10 @@ class LinearRegression( RegressionTechnique ):
 
     @property
     def standard_error_squared( self ):
+        """
+        Computes the square of the standard error of the regression.
+        """
+
         if self._standard_error_squared is None:
             dataSize = self.independent_stat_set.size
             slopeTerm = integer_power( self.slope, 2 ) * ( dataSize * ( self.independent_stat_set ** 2 ).sum - integer_power( self.independent_stat_set.sum, 2 ) )
@@ -131,6 +135,10 @@ class LinearRegression( RegressionTechnique ):
 
     @property
     def slope_error( self ):
+        """
+        Computes the error of the slope of the regression.
+        """
+
         if self._slope_error is None:
             self._slope_error = math.sqrt( self.slope_error_squared )
 
@@ -138,6 +146,10 @@ class LinearRegression( RegressionTechnique ):
 
     @property
     def slope_error_squared( self ):
+        """
+        Computes the square of the error of the slope of the regression.
+        """
+
         if self._slope_error_squared is None:
             dataSize = self.independent_stat_set.size
             numerator = dataSize * self.standard_error_squared
@@ -148,6 +160,10 @@ class LinearRegression( RegressionTechnique ):
 
     @property
     def intercept_error( self ):
+        """
+        Computes the error of the intercept of the regression.
+        """
+
         if self._intercept_error is None:
             self._intercept_error = math.sqrt( self.intercept_error_squared )
 
@@ -155,6 +171,10 @@ class LinearRegression( RegressionTechnique ):
 
     @property
     def intercept_error_squared( self ):
+        """
+        Computes the square of the error of the intercept of the regression.
+        """
+
         if self._intercept_error_squared is None:
             self._intercept_error_squared = self.slope_error_squared * float( self._compute_sum_of_squares( self.independent_stat_set ) ) / self.independent_stat_set.size
 
