@@ -65,7 +65,7 @@ def floating_point_equal( left, right, tolerance = 0.0 ):
     if tolerance < 0.0:
         raise ValueError( "Tolerance cannot be less than 0.0." )
     else:
-        return left - right < tolerance
+        return abs( left - right ) < tolerance
 
 def floating_point_not_equal( left, right, tolerance = 0.0 ):
     return not floating_point_equal( left, right, tolerance )
