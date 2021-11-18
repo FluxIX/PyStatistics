@@ -31,7 +31,7 @@ class StatisticsTester( object ):
             print( "{}:".format( label ) )
 
         tab_Spacing = " " * 3
-        message_data = [ ( "Expected Value", expected_value ), ( "Actual Value", actual_value ), ] + zip( [ "Difference", "Percent Difference", "Percent Error" ], difference )
+        message_data = [ ( "Expected Value", expected_value ), ( "Actual Value", actual_value ), ] + zip( [ "Value Difference", "Percent Difference", "Percent Error" ], difference )
         for message, data in message_data:
             print( "{}{}: {}".format( tab_Spacing, message, data ) )
 
