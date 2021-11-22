@@ -2,6 +2,7 @@ __version__ = r"1.0"
 
 import math
 from ..utilities.argument_unpacking import unpack_arguments
+from ..utilities.iterable import iterable_any
 from ..utilities.math import compute_real_root
 
 def _validate_values( *values, **kwargs ):
@@ -176,12 +177,15 @@ def compute_generalized_mean( power, *values, **kwargs ):
 
     if value_count > 1:
         order = int( power )
+
         if float( order ) != float( power ):
             raise ValueError( "Generalized mean power must be an integer." )
         elif order == 1:
             result = compute_arithmetic_mean( *values, **kwargs )
         elif order == 0:
             result = compute_geometric_mean( *values, **kwargs )
+        elif order < 0 and iterable_any( values, lambda x: x == 0 ):
+            raise ValueError( "Cannot compute the generalized mean with a negative power because there are input values of zero-value." )
         else:
             value_count = len( values )
 
@@ -192,10 +196,29 @@ def compute_generalized_mean( power, *values, **kwargs ):
 
             if has_weights:
                 value_sum = _get_weighted_summation( weights, map( lambda x: pow( x, order ), values ) )
-                result = compute_real_root( value_sum, order )
+                weight_sum = sum( weights )
             else:
                 value_sum = sum( map( lambda x: pow( x, order ), values ) )
-                result = compute_real_root( float( value_sum ) / value_count, order )
+                # if all of the weights are the same, you can cancel the weights from the summation expression, then the sum of weights is simply the number of values.
+                weight_sum = value_count
+
+            # By conditionally switching the numerator and denominator, we are able to avoid adding another check to prevent a divide by zero.
+            if order > 0:
+                if weight_sum == 0:
+                    raise ValueError( "The sum of the weights is zero." )
+                else:
+                    numerator = value_sum
+                    denominator = weight_sum
+                    p = order
+            else: # if the order < 0
+                if value_sum == 0:
+                    raise ValueError( "The sum of the values is zero." )
+                else:
+                    numerator = weight_sum
+                    denominator = value_sum
+                    p = -order
+
+            result = compute_real_root( float( numerator ) / denominator, p )
     else:
         result = complex( values[ 0 ], 0 )
 

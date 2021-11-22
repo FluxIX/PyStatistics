@@ -19,6 +19,8 @@ def compute_real_root( value, power ):
 
     if power == 0:
         raise ValueError( "Power of root cannot be zero." )
+    elif power < 0 and value == 0:
+        raise ValueError( "Power of root ({}) cannot be less than zero with a zero-value base.".format( power ) )
     elif value == 0 or power == 1:
         result = value
     else:

@@ -13,7 +13,7 @@ class Counter( SimpleCounter ):
         if len( args ) == 1:
             container = args[ 0 ]
             if isinstance( container, ( dict, SimpleCounter ) ):
-                args = container.keys()
+                args = container.to_tuple()
             elif isinstance( container, ( list, tuple ) ):
                 args = tuple( container )
             else:
@@ -140,6 +140,21 @@ class Counter( SimpleCounter ):
         """
 
         return frozenset( [ key for key in self if frequency_predicate( self[ key ] ) ] )
+
+    def to_tuple( self ):
+        """
+        Gets a tuple which contains all of the values found in the counter with the correct frequencies.
+        """
+
+        container = []
+
+        for key in self:
+            for _ in range( self[ key ] ):
+                container.append( key )
+
+        result = tuple( container )
+
+        return result
 
     def get_immutable( self ):
         """

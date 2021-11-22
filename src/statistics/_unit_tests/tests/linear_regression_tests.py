@@ -1,6 +1,7 @@
-from .numeric_test_case import NumericTestCase
-from ..statistics_set import StatisticsSet
-from ..regression.linear_regression import LinearRegression
+import unittest
+from ..numeric_test_case import NumericTestCase
+from ...statistics_set import StatisticsSet
+from ...regression.linear_regression import LinearRegression
 
 class TestLinearRegression( NumericTestCase ):
     def __init__( self, methodName = "runTest", **kwargs ):
@@ -55,3 +56,6 @@ class TestLinearRegression( NumericTestCase ):
     def test_lazy_computation( self ):
         regression = LinearRegression( self.independent_set, self.dependent_set, lazy_computation = True )
         self.assertTrue( regression._covariance is None )
+
+if __name__ == "__main__":
+    unittest.main()

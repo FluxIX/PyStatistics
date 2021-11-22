@@ -1,5 +1,6 @@
 import math
 import unittest
+from ..calculations.error import compute_relative_difference, compute_relative_error
 from ..utilities.math import floating_point_equal, floating_point_less, floating_point_less_equal, floating_point_greater, floating_point_greater_equal
 
 class NumericTestCase( unittest.TestCase ):
@@ -25,9 +26,8 @@ class NumericTestCase( unittest.TestCase ):
 
     def _compute_difference( self, actual_value, expected_value ):
         difference = math.fabs( actual_value - expected_value )
-        mean_value = float( actual_value + expected_value ) / 2
-        percent_difference = float( difference ) / mean_value * 100
-        percent_error = float( difference ) / expected_value * 100
+        percent_difference = compute_relative_difference( actual_value, expected_value, scale = 100 )
+        percent_error = compute_relative_error( actual_value, expected_value, scale = 100 )
 
         return difference, percent_difference, percent_error
 
