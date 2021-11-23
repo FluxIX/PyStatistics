@@ -1,8 +1,10 @@
 __version__ = r"1.0"
 
 from collections import Counter as SimpleCounter
+from .cached_value import CachedValue
 from .exceptions import NotSupportedException
 from .hashing import get_hash
+from .limited_mutability import LimitedMutabilityMixin
 
 class Counter( SimpleCounter ):
     """
@@ -166,13 +168,32 @@ class Counter( SimpleCounter ):
     def __repr__( self ):
         return super( SimpleCounter, self ).__repr__()
 
-class FrozenCounter( Counter ):
+class FrozenCounter( LimitedMutabilityMixin, Counter ):
     """
     Represents an immutable collection of items with their associated counts.
     """
 
+    def __new__( cls, *args, **kwargs ):
+        mutable_field_names = [ "_initialized", "_hash", "_tuple_view" ]
+
+        keyword_args = kwargs.copy()
+        if "mutable_field_names" in keyword_args:
+            mutable_field_names.extend( keyword_args[ "mutable_field_names" ] )
+
+        keyword_args[ "mutable_field_names" ] = mutable_field_names
+
+        def initialize_members( obj, **kwargs ):
+            obj._initialized = False
+
+        keyword_args[ "initialization" ] = initialize_members
+
+        result = super( FrozenCounter, cls ).__new__( cls, *args, **keyword_args )
+
+        return result
+
     def __init__( self, *args, **kwargs ):
-        self._initialized = False
+        self._hash = CachedValue()
+        self._tuple_view = CachedValue()
 
         self._super().__init__( *args, **kwargs )
 
@@ -189,9 +210,7 @@ class FrozenCounter( Counter ):
 
     def update( self, *args, **kwargs ):
         # The SimpleCounter uses the `update` method during initialization.
-        if self._initialized:
-            raise NotSupportedException( "Cannot alter item values." )
-        else:
+        if self._validate_mutability( "_initialized", lambda: not self._initialized, **kwargs ):
             return self._super().update( *args, **kwargs )
 
     def __ior__( self, other ):
@@ -204,11 +223,8 @@ class FrozenCounter( Counter ):
         raise NotSupportedException( "Cannot remove items." )
 
     def __setattr__( self, name, value ):
-        # We need to be able set the initialized flag.
-        if name != "_initialized":
-            raise NotSupportedException( "Cannot alter item values." )
-        else:
-            self._super().__setattr__( name, value )
+        if self._validate_mutability( name, lambda: not self._initialized ):
+            super( Counter, self ).__setattr__( name, value )
 
     def __pos__( self ):
         return self._invoke_then_freeze( lambda: self._super().__pos__() )
@@ -294,5 +310,18 @@ class FrozenCounter( Counter ):
 
         return Counter( self )
 
+    def to_tuple( self ):
+        """
+        Gets a tuple which contains all of the values found in the counter with the correct frequencies.
+        """
+
+        if not self._tuple_view.has_value:
+            self._tuple_view.set_value( self._super().to_tuple() )
+
+        return self._tuple_view.value
+
     def __hash__( self ):
-        return get_hash( self.__class___.__name__, *self.viewitems() )
+        if not self._hash.has_value:
+            self._hash.set_value( get_hash( self.__class___.__name__, *self.viewitems() ) )
+
+        return self._hash.value
