@@ -13,8 +13,9 @@ class TestModeCalculations( unittest.TestCase ):
         self.assertSequenceEqual( get_modes( *[ 1, 2, 3, 4, 5, 3, 4 ] ), ( 3, 4 ), seq_type = tuple )
 
     def test_counter( self ):
-        counter = Counter( *[ 1, 2, 3, 4, 5, 4 ] )
-        self.assertSequenceEqual( get_modes( counter ), ( 4, ), seq_type = tuple )
+        data = [ 1, 2, 3, 4, 5, 4 ]
+        counter = Counter( *data )
+        self.assertSequenceEqual( get_modes( counter ), get_modes( *data ), seq_type = tuple )
 
 if __name__ == "__main__":
     unittest.main()
