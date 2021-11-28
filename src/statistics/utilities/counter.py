@@ -6,6 +6,196 @@ from .exceptions import NotSupportedException
 from .hashing import get_hash
 from .limited_mutability import LimitedMutabilityMixin
 
+class CounterManipulator( object ):
+    def __init__( self, counter, **kwargs ):
+        self._counter = counter
+
+    @property
+    def counter( self ):
+        """
+        The counter whose values are to the manipulated.
+        """
+
+        return self._counter
+
+    @property
+    def values( self ):
+        """
+        Gets the values to be manipulated.
+        """
+
+        return self._get_values()
+
+    def _get_values( self ):
+        raise NotImplementedError( "Child must implement." )
+
+    def _unary_value_transform( self, data, transform ):
+        return [ transform( value ) for value in data ]
+
+    def _get_current_manipulator( self, counter ):
+        raise NotImplementedError( "Child must implement." )
+
+class MutableCounterManipulator( CounterManipulator ):
+    def _classic_division( self, a, b ):
+        # TODO: have a mechanism to dispatch to the logical a.__div__ operation.
+        return a / b
+
+    def _floor_division( self, a, b ):
+        # TODO: have a mechanism to dispatch to the logical a.__floordiv__ operation.
+        return a // b
+
+    def _true_division( self, a, b ):
+        # TODO: have a mechanism to dispatch to the logical a.__truediv__ operation.
+        return a / b
+
+    def _transform_values( self, transform ):
+        raise NotImplementedError( "Child must implement." )
+
+    def _apply_scalar_operation( self, other, operation, label ):
+        self._transform_values( lambda x: operation( x, other ) )
+
+    def __iadd__( self, other ):
+        self._apply_scalar_operation( other, lambda a, b: a + b, "addition" )
+        return self.counter
+
+    def __imul__( self, other ):
+        self._apply_scalar_operation( other, lambda a, b: a * b, "multiplication" )
+        return self.counter
+
+    def __idiv__( self, other ):
+        self._apply_scalar_operation( other, lambda a, b: self._classic_division( a, b ), "classic division" )
+        return self.counter
+
+    def __ifloordiv__( self, other ):
+        self._apply_scalar_operation( other, lambda a, b: self._floor_division( a, b ), "floor division" )
+        return self.counter
+
+    def __imod__( self, other ):
+        self._apply_scalar_operation( other, lambda a, b: a % b, "modulo" )
+        return self.counter
+
+    def __ipow__( self, other ):
+        self._apply_scalar_operation( other, lambda a, b: a ** b, "exponentiation" )
+        return self.counter
+
+    def __isub__( self, other ):
+        self._apply_scalar_operation( other, lambda a, b: a - b, "subtraction" )
+        return self.counter
+
+    def __itruediv__( self, other ):
+        self._apply_scalar_operation( other, lambda a, b: self._true_division( a, b ), "true division" )
+        return self.counter
+
+    def __add__( self, other ):
+        result = self.counter.copy()
+        self._get_current_manipulator( result ).__iadd__( other )
+        return result
+
+    def __mul__( self, other ):
+        result = self.counter.copy()
+        self._get_current_manipulator( result ).__imul__( other )
+        return result
+
+    def __div__( self, other ):
+        result = self.counter.copy()
+        self._get_current_manipulator( result ).__idiv__( other )
+        return result
+
+    def __floordiv__( self, other ):
+        result = self.counter.copy()
+        self._get_current_manipulator( result ).__ifloordiv__( other )
+        return result
+
+    def __mod__( self, other ):
+        result = self.counter.copy()
+        self._get_current_manipulator( result ).__imod__( other )
+        return result
+
+    def __pow__( self, other ):
+        result = self.counter.copy()
+        self._get_current_manipulator( result ).__ipow__( other )
+        return result
+
+    def __sub__( self, other ):
+        result = self.counter.copy()
+        self._get_current_manipulator( result ).__isub__( other )
+        return result
+
+    def __truediv__( self, other ):
+        result = self.counter.copy()
+        self._get_current_manipulator( result ).__itruediv__( other )
+        return result
+
+    def _get_unary_transformed_values( self, transform ):
+        raise NotImplementedError( "Child must implement." )
+
+    def _build_new_counter_with_data( self, data ):
+        raise NotImplementedError( "Child must implement." )
+
+    def __abs__( self ):
+        """
+        Returns a new counter with the absolute values of the counter values.
+        """
+
+        return self._build_new_counter_with_data( self._get_unary_transformed_values( abs ) )
+
+    def __pos__( self ):
+        """
+        Returns a new counter with the positive values of the counter values.
+        """
+
+        return self._build_new_counter_with_data( self._get_unary_transformed_values( lambda x:+x ) )
+
+    def __neg__( self ):
+        """
+        Returns a new counter with the negated values of the counter values.
+        """
+
+        return self._build_new_counter_with_data( self._get_unary_transformed_values( lambda x:-x ) )
+
+class CounterKeyManipulator( MutableCounterManipulator ):
+    def _get_current_manipulator( self, counter ):
+        return counter.key_values
+
+    def _transform_values( self, transform ):
+        remapping = {}
+        for key in self.counter:
+            new_key = transform( key )
+
+            if new_key not in remapping:
+                remapping[ new_key ] = 0
+
+            remapping[ new_key ] += self.counter[ key ]
+
+        self.counter.clear()
+        self.counter.update( remapping )
+
+    def _get_unary_transformed_values( self, transform ):
+        return self._unary_value_transform( self.counter.to_tuple(), transform )
+
+    def _build_new_counter_with_data( self, data ):
+        return self.counter.__class__( *data )
+
+    def _get_values( self ):
+        return self.counter.keys()
+
+class CounterFrequencyManipulator( MutableCounterManipulator ):
+    def _get_current_manipulator( self, counter ):
+        return counter.frequency_values
+
+    def _transform_values( self, transform ):
+        for key in self.counter:
+            self.counter[ key ] = transform( self.counter[ key ] )
+
+    def _get_unary_transformed_values( self, transform ):
+        return { key: transform( self.counter[ key ] ) for key in self.counter }
+
+    def _build_new_counter_with_data( self, data ):
+        return self.counter.__class__( data )
+
+    def _get_values( self ):
+        return self.counter.values()
+
 class Counter( SimpleCounter ):
     """
     Represents a mutable collection of items with their associated counts.
@@ -14,8 +204,10 @@ class Counter( SimpleCounter ):
     def __init__( self, *args, **kwargs ):
         if len( args ) == 1:
             container = args[ 0 ]
-            if isinstance( container, ( dict, SimpleCounter ) ):
+            if isinstance( container, SimpleCounter ):
                 args = container.to_tuple()
+            elif isinstance( container, dict ):
+                args = self.__class__.to_tuple( container )
             elif isinstance( container, ( list, tuple ) ):
                 args = tuple( container )
             else:
@@ -23,84 +215,28 @@ class Counter( SimpleCounter ):
 
         super( Counter, self ).__init__( args, **kwargs )
 
-    def _transform_values( self, transform ):
-        for key in self:
-            self[ key ] = transform( self[ key ] )
+        self._key_values = CounterKeyManipulator( self )
+        self._frequency_values = CounterFrequencyManipulator( self )
 
-    def _apply_scalar_operation( self, other, operation, label ):
-        try:
-            o = float( other )
-        except:
-            raise ValueError( "Invalid type to apply {} operation to counter values: value must a scalar.".format( label ) )
-        else:
-            self._transform_values( lambda x: operation( x, o ) )
+    @property
+    def key_values( self ):
+        """
+        Provides a means to manipulate the counter's key values.
+        """
 
-    def __abs__( self ):
-        self._transform_values( lambda x: abs( x ) )
-        return self
+        return self._key_values
 
-    def __iadd__( self, other ):
-        self._apply_scalar_operation( other, lambda a, b: a + b, "addition" )
-        return self
+    @property
+    def frequency_values( self ):
+        """
+        Provides a means to manipulate the counter's frequency values.
+        """
 
-    def __imul__( self, other ):
-        self._apply_scalar_operation( other, lambda a, b: a * b, "multiplication" )
-        return self
+        return self._frequency_values
 
-    def __idiv__( self, other ):
-        self._apply_scalar_operation( other, lambda a, b: a / b, "classic division" )
-        return self
-
-    def __ifloordiv__( self, other ):
-        self._apply_scalar_operation( other, lambda a, b: a // b, "floor division" )
-        return self
-
-    def __ipow__( self, other ):
-        self._apply_scalar_operation( other, lambda a, b: a ** b, "exponentiation" )
-        return self
-
-    def __isub__( self, other ):
-        self._apply_scalar_operation( other, lambda a, b: a - b, "subtraction" )
-        return self
-
-    def __itruediv__( self, other ):
-        self._apply_scalar_operation( other, lambda a, b: a / b, "true division" )
-        return self
-
-    def __add__( self, other ):
-        result = self.copy()
-        result += other
-        return result
-
-    def __mul__( self, other ):
-        result = self.copy()
-        result *= other
-        return result
-
-    def __div__( self, other ):
-        result = self.copy()
-        result /= other
-        return result
-
-    def __floordiv__( self, other ):
-        result = self.copy()
-        result //= other
-        return result
-
-    def __pow__( self, other ):
-        result = self.copy()
-        result **= other
-        return result
-
-    def __sub__( self, other ):
-        result = self.copy()
-        result -= other
-        return result
-
-    def __truediv__( self, other ):
-        result = self.copy()
-        result /= other
-        return result
+    def __del__( self ):
+        del self._key_values
+        del self._frequency_values
 
     def least_common( self, n = None ):
         """
@@ -174,7 +310,7 @@ class FrozenCounter( LimitedMutabilityMixin, Counter ):
     """
 
     def __new__( cls, *args, **kwargs ):
-        mutable_field_names = [ "_initialized", "_hash", "_tuple_view" ]
+        mutable_field_names = [ "_initialized", "_hash", "_tuple_view", "_key_values", "_frequency_values" ]
 
         keyword_args = kwargs.copy()
         if "mutable_field_names" in keyword_args:
