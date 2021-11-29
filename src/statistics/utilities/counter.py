@@ -38,7 +38,9 @@ class CounterManipulator( object ):
 class MutableCounterManipulator( CounterManipulator ):
     def _classic_division( self, a, b ):
         # TODO: have a mechanism to dispatch to the logical a.__div__ operation.
-        return a / b
+
+        # return a / b
+        return a.__div__( b )
 
     def _floor_division( self, a, b ):
         # TODO: have a mechanism to dispatch to the logical a.__floordiv__ operation.
@@ -46,7 +48,9 @@ class MutableCounterManipulator( CounterManipulator ):
 
     def _true_division( self, a, b ):
         # TODO: have a mechanism to dispatch to the logical a.__truediv__ operation.
-        return a / b
+
+        # return a / b
+        return a.__truediv__( b )
 
     def _transform_values( self, transform ):
         raise NotImplementedError( "Child must implement." )
@@ -213,10 +217,10 @@ class Counter( SimpleCounter ):
             else:
                 raise ValueError( "Unsupported item container for the Counter: {}".format( str( type( container ) ) ) )
 
-        super( Counter, self ).__init__( args, **kwargs )
-
         self._key_values = CounterKeyManipulator( self )
         self._frequency_values = CounterFrequencyManipulator( self )
+
+        super( Counter, self ).__init__( args, **kwargs )
 
     @property
     def key_values( self ):
