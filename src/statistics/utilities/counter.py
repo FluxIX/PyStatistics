@@ -59,73 +59,143 @@ class MutableCounterManipulator( CounterManipulator ):
         self._transform_values( lambda x: operation( x, other ) )
 
     def __iadd__( self, other ):
+        """
+        In-place scalar addition with the keys.
+        """
+
         self._apply_scalar_operation( other, lambda a, b: a + b, "addition" )
-        return self.counter
+        return self
 
     def __imul__( self, other ):
+        """
+        In-place scalar multiplication with the keys.
+        """
+
         self._apply_scalar_operation( other, lambda a, b: a * b, "multiplication" )
-        return self.counter
+        return self
 
     def __idiv__( self, other ):
+        """
+        In-place scalar classic addition with the keys.
+        """
+
         self._apply_scalar_operation( other, lambda a, b: self._classic_division( a, b ), "classic division" )
-        return self.counter
+        return self
 
     def __ifloordiv__( self, other ):
+        """
+        In-place scalar floor division with the keys.
+        """
+
         self._apply_scalar_operation( other, lambda a, b: self._floor_division( a, b ), "floor division" )
-        return self.counter
+        return self
 
     def __imod__( self, other ):
+        """
+        In-place scalar modulo with the keys.
+        """
+
         self._apply_scalar_operation( other, lambda a, b: a % b, "modulo" )
-        return self.counter
+        return self
 
     def __ipow__( self, other ):
+        """
+        In-place scalar exponentiation with the keys.
+        """
+
         self._apply_scalar_operation( other, lambda a, b: a ** b, "exponentiation" )
-        return self.counter
+        return self
 
     def __isub__( self, other ):
+        """
+        In-place scalar subtraction with the keys.
+        """
+
         self._apply_scalar_operation( other, lambda a, b: a - b, "subtraction" )
-        return self.counter
+        return self
 
     def __itruediv__( self, other ):
+        """
+        In-place scalar true division with the keys.
+        """
+
         self._apply_scalar_operation( other, lambda a, b: self._true_division( a, b ), "true division" )
-        return self.counter
+        return self
 
     def __add__( self, other ):
+        """
+        Scalar addition with the keys with the result going to a new Counter.
+        """
+
         result = self.counter.copy()
         self._get_current_manipulator( result ).__iadd__( other )
         return result
 
+    def __radd__( self, other ):
+        return self.__add__( other )
+
     def __mul__( self, other ):
+        """
+        Scalar multiplication with the keys with the result going to a new Counter.
+        """
+
         result = self.counter.copy()
         self._get_current_manipulator( result ).__imul__( other )
         return result
 
+    def __rmul__( self, other ):
+        return self.__mul__( other )
+
     def __div__( self, other ):
+        """
+        Scalar classic division with the keys with the result going to a new Counter.
+        """
+
         result = self.counter.copy()
         self._get_current_manipulator( result ).__idiv__( other )
         return result
 
     def __floordiv__( self, other ):
+        """
+        Scalar floor division with the keys with the result going to a new Counter.
+        """
+
         result = self.counter.copy()
         self._get_current_manipulator( result ).__ifloordiv__( other )
         return result
 
     def __mod__( self, other ):
+        """
+        Scalar modulo with the keys with the result going to a new Counter.
+        """
+
         result = self.counter.copy()
         self._get_current_manipulator( result ).__imod__( other )
         return result
 
     def __pow__( self, other ):
+        """
+        Scalar exponentiation with the keys with the result going to a new Counter.
+        """
+
         result = self.counter.copy()
         self._get_current_manipulator( result ).__ipow__( other )
         return result
 
     def __sub__( self, other ):
+        """
+        Scalar subtraction with the keys with the result going to a new Counter.
+        """
+
         result = self.counter.copy()
         self._get_current_manipulator( result ).__isub__( other )
         return result
 
     def __truediv__( self, other ):
+        """
+        Scalar true division with the keys with the result going to a new Counter.
+        """
+
         result = self.counter.copy()
         self._get_current_manipulator( result ).__itruediv__( other )
         return result
@@ -208,10 +278,8 @@ class Counter( SimpleCounter ):
     def __init__( self, *args, **kwargs ):
         if len( args ) == 1:
             container = args[ 0 ]
-            if isinstance( container, SimpleCounter ):
-                args = container.to_tuple()
-            elif isinstance( container, dict ):
-                args = self.__class__.to_tuple( container )
+            if isinstance( container, dict ):
+                args = container
             elif isinstance( container, ( list, tuple ) ):
                 args = tuple( container )
             else:
@@ -283,20 +351,28 @@ class Counter( SimpleCounter ):
 
         return frozenset( [ key for key in self if frequency_predicate( self[ key ] ) ] )
 
-    def to_tuple( self ):
+    @classmethod
+    def convert_to_tuple( cls, counter ):
         """
-        Gets a tuple which contains all of the values found in the counter with the correct frequencies.
+        Gets a tuple which contains all of the values found in the given counter with the frequencies as they are represented in the counter.
         """
 
         container = []
 
-        for key in self:
-            for _ in range( self[ key ] ):
+        for key in counter:
+            for _ in range( counter[ key ] ):
                 container.append( key )
 
         result = tuple( container )
 
         return result
+
+    def to_tuple( self ):
+        """
+        Gets a tuple which contains all of the values found in the counter with the frequencies as they are represented in the counter.
+        """
+
+        return self.convert_to_tuple( self )
 
     def get_immutable( self ):
         """
@@ -304,6 +380,36 @@ class Counter( SimpleCounter ):
         """
 
         return FrozenCounter( self )
+
+    def __xor__( self, other ):
+        """
+        Gets a new Counter containing the items in either this Counter or the given Counter, but not both.
+        """
+
+        if other is None:
+            raise ValueError( "`other` parameter cannot be None." )
+        elif not isinstance( other, dict ):
+            raise ValueError( "XOR operation requires another `dict` (or child thereof) as a parameter." )
+        else:
+            data = {}
+            for reference_counter, other_counter in ( self, other ), ( other, self ):
+                for key in reference_counter:
+                    if key not in other_counter:
+                        data[ key ] = reference_counter[ key ]
+
+            return self.__class__( data )
+
+    def __rxor__( self, other ):
+        return self.__xor__( other )
+
+    def unique_from( self, *others, **kwargs ):
+        """
+        Gets a new Counter containing the keys found in this Counter, but not the given items; the values are from this Counter.
+        """
+
+        other = set( others )
+        keys = [ key for key in self.counter if key not in other ]
+        return self.__class__( { self[ key ] for key in keys } )
 
     def __repr__( self ):
         return super( SimpleCounter, self ).__repr__()
