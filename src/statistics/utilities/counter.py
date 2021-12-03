@@ -381,9 +381,69 @@ class Counter( SimpleCounter ):
 
         return FrozenCounter( self )
 
-    def __xor__( self, other ):
+    def __iand__( self, other ):
         """
-        Gets a new Counter containing the items in either this Counter or the given Counter, but not both.
+        Modifies the current Counter in-place with the intersection of the items in this Counter and the given Counter; the frequency if the intersected items is summed and put into this Counter.
+        """
+
+        if other is None:
+            raise ValueError( "`other` parameter cannot be None." )
+        elif not isinstance( other, dict ):
+            raise ValueError( "Cannot intersect a Counter with a non-dict object." )
+        else:
+            keys = [ key for key in self.key_values.values + other.keys() if key in self and key in other ]
+            data = { key: self[ key ] + other[ key ] for key in keys }
+
+            self.clear()
+            self.update( data )
+
+            return self
+
+    def __and__( self, other ):
+        """
+        Gets a new Counter containing the intersection of the items in this Counter and the given Counter; the frequency if the intersected items is summed and put into the resulting Counter.
+        """
+
+        result = self.copy()
+        result &= other
+        return result
+
+    def __rand__( self, other ):
+        return self.__and__( other )
+
+    def __ior__( self, other ):
+        """
+        Modifies the current Counter in-place with the union of the items in this Counter and the given Counter; if an item appears in both input Counters, the frequency if the intersected items is summed and put into this Counter.
+        """
+
+        if other is None:
+            raise ValueError( "`other` parameter cannot be None." )
+        elif not isinstance( other, dict ):
+            raise ValueError( "Cannot union a Counter with a non-dict object." )
+        else:
+            keys = set( self.key_values.values + other.keys() )
+            data = { key: self[ key ] + other.get( key, 0 ) for key in keys }
+
+            self.clear()
+            self.update( data )
+
+            return self
+
+    def __or__( self, other ):
+        """
+        Gets a new Counter containing the union of the items in this Counter and the given Counter; if an item appears in both input Counters, the frequency is summed and put into the resulting Counter.
+        """
+
+        result = self.copy()
+        result |= other
+        return result
+
+    def __ror__( self, other ):
+        return self.__or__( other )
+
+    def __ixor__( self, other ):
+        """
+        Modifies the current Counter in-place with the items in either this Counter or the given Counter, but not both.
         """
 
         if other is None:
@@ -397,7 +457,19 @@ class Counter( SimpleCounter ):
                     if key not in other_counter:
                         data[ key ] = reference_counter[ key ]
 
-            return self.__class__( data )
+            self.clear()
+            self.update( data )
+
+            return self
+
+    def __xor__( self, other ):
+        """
+        Gets a new Counter containing the items in either this Counter or the given Counter, but not both.
+        """
+
+        result = self.copy()
+        result ^= other
+        return result
 
     def __rxor__( self, other ):
         return self.__xor__( other )
@@ -408,8 +480,8 @@ class Counter( SimpleCounter ):
         """
 
         other = set( others )
-        keys = [ key for key in self.counter if key not in other ]
-        return self.__class__( { self[ key ] for key in keys } )
+        keys = { key for key in self if key not in other }
+        return self.__class__( { key: self[ key ] for key in keys } )
 
     def __repr__( self ):
         return super( SimpleCounter, self ).__repr__()
