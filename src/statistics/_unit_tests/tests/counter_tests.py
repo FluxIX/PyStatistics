@@ -6,6 +6,10 @@ class CounterTestCase( unittest.TestCase ):
         return self.assertSequenceEqual( sorted( counter_data ), sorted( target_data ), msg = msg )
 
     def _get_frequencies( self, test_counter, source_counter, operation ):
+        """
+        Gets the frequencies from the given test counter and the given source counter for the keys found in the test counter. If the callable operation is not None, the callable operation is used to transform the source frequencies, otherwise no transformation is applied.
+        """
+
         test_frequencies = []
         source_frequencies = []
 
@@ -25,10 +29,32 @@ class CounterTestCase( unittest.TestCase ):
         test_data, oracle_data = self._get_frequencies( test_counter, oracle_counter, operation )
         self.assertDataEqual( test_data, oracle_data, msg )
 
+    def assertItemsInSequence( self, items, target_sequence, msg = None ):
+        items_in_sequence = sum( map( lambda x: int( x in target_sequence ), items ) )
+        self.assertEqual( items_in_sequence, len( items ), msg )
+
+    def assertItemsNotInSequence( self, items, target_sequence, msg = None ):
+        items_in_sequence = sum( map( lambda x: int( x in target_sequence ), items ) )
+        self.assertNotEqual( items_in_sequence, len( items ), msg )
+
 class TestCounter( CounterTestCase ):
     def setUp( self ):
         self.counter_data = [ 1, 2, 3, 4, 4, 5, -3, -5, 1, 2, 3, 4, 5, -3 ]
         self.counter = Counter( *self.counter_data )
+
+    def test_keys_contains( self ):
+        self.assertItemsInSequence( [ 1, 2 ], self.counter.key_values )
+        self.assertItemsNotInSequence( [ -4, 0 ], self.counter.key_values )
+
+    def test_keys_hash( self ):
+        pass
+
+    def test_keys_iter( self ):
+        self.assertEqual( len( [ value for value in self.counter.key_values ] ), len( { value for value in self.counter_data } ) )
+        self.assertSequenceEqual( self.counter.key_values.values, [ value for value in self.counter.key_values ] )
+
+    def test_keys_len( self ):
+        self.assertEquals( len( self.counter.key_values ), len( set( self.counter_data ) ) )
 
     def test_keys_inplace_addition_scalar( self ):
         bias = 2
@@ -142,6 +168,19 @@ class TestCounter( CounterTestCase ):
         power = 2
         c = self.counter.key_values ** power
         self.assertDataEqual( c.keys(), { key ** power for key in self.counter } )
+
+    def test_frequency_contains( self ):
+        self.assertItemsInSequence( [ 1, 2, 3 ], self.counter.frequency_values )
+        self.assertItemsNotInSequence( [ 5, 0 ], self.counter.frequency_values )
+
+    def test_frequency_hash( self ):
+        pass
+
+    def test_frequency_iter( self ):
+        self.assertSequenceEqual( self.counter.frequency_values.values, [ value for value in self.counter.frequency_values ] )
+
+    def test_frequency_len( self ):
+        self.assertEquals( len( self.counter.frequency_values ), len( self.counter ) )
 
     def test_frequency_inplace_addition_scalar( self ):
         bias = 2
@@ -270,6 +309,24 @@ class TestCounter( CounterTestCase ):
         self.assertIs( type( c ), Counter )
         self.assertCounterFrequenciesEqual( c, self.counter, lambda x: x ** power )
 
+    def test_counter_inplace_and( self ):
+        pass
+
+    def test_counter_and( self ):
+        pass
+
+    def test_counter_reversed_and( self ):
+        pass
+
+    def test_counter_inplace_or( self ):
+        pass
+
+    def test_counter_or( self ):
+        pass
+
+    def test_counter_reversed_or( self ):
+        pass
+
     def _get_xor_oracle_counter( self, other_dict ):
         all_keys = set( self.counter.keys() + other_dict.keys() )
 
@@ -292,6 +349,9 @@ class TestCounter( CounterTestCase ):
 
         return result
 
+    def test_counter_ixor( self ):
+        pass
+
     def test_counter_xor( self ):
         other_data = { 2: 4, 3: 5, 4: 9, 1: 3, 6:-2, 0: 3, "str": 10 }
         oracle_counter = self._get_xor_oracle_counter( other_data )
@@ -311,7 +371,16 @@ class TestCounter( CounterTestCase ):
         self.assertCounterFrequenciesEqual( c, oracle_counter )
 
     def test_unique_from( self ):
-        pass
+        excluding_data = { 1: 2, 2:1, 3:4, 4:2 }
+        self.assertItemsInSequence( excluding_data.keys(), self.counter.key_values, "Invalid test: the excluded items must exist in the initial data." )
+
+        c = self.counter.unique_from( *excluding_data.keys() )
+
+        self.assertIs( type( c ), Counter )
+        self.assertItemsInSequence( c.keys(), self.counter.key_values )
+        self.assertItemsNotInSequence( excluding_data, c.key_values )
+
+        self.assertCounterFrequenciesEqual( c, { key: self.counter[ key ] for key in c } )
 
     def test_convert_to_tuple( self ):
         t = self.counter.convert_to_tuple( self.counter )

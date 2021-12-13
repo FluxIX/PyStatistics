@@ -35,6 +35,38 @@ class CounterManipulator( object ):
     def _get_current_manipulator( self, counter ):
         raise NotImplementedError( "Child must implement." )
 
+    def __contains__( self, other ):
+        return other in self.values
+
+    def __eq__( self, other ):
+        if isinstance( other, CounterManipulator ):
+            result = self.values == other.values
+        else:
+            result = self.values == other
+
+        return result
+
+    def __enter__( self ):
+        if hasattr( self.values, "__enter___" ):
+            result = self.values.__enter___()
+        else:
+            result = self.values
+
+        return result
+
+    def __exit__( self, exc_type, exc_val, exc_tb ):
+        if hasattr( self.values, "__exit__" ):
+            return self.values.__exit__( exc_type, exc_val, exc_tb )
+
+    def __hash__( self ):
+        return hash( self.values )
+
+    def __iter__( self ):
+        return self.values.__iter__()
+
+    def __len__( self ):
+        return len( self.values )
+
 class MutableCounterManipulator( CounterManipulator ):
     def _classic_division( self, a, b ):
         # TODO: have a mechanism to dispatch to the logical a.__div__ operation.
